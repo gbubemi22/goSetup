@@ -73,7 +73,7 @@ func (s *Service) Health() map[string]string {
 
 // OpenCollection opens a MongoDB collection
 func (s *Service) OpenCollection(collectionName string) *mongo.Collection {
-    collection := s.db.Database("GO_Rental").Collection(collectionName)
+    collection := s.db.Database("Gomongodb").Collection(collectionName)
     return collection
 }
 

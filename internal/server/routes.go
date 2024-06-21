@@ -1,9 +1,9 @@
 package server
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"go_mongoDb/internal/controller"
+	"net/http"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
@@ -12,6 +12,10 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.GET("/", s.HelloWorldHandler)
 
 	r.GET("/health", s.healthHandler)
+
+	userController := controller.NewUserController()
+
+	r.POST("/v1/auth/users/create", userController.CreateUserHttp)
 
 	return r
 }
