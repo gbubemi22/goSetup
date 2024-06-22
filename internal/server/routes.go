@@ -16,6 +16,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 	userController := controller.NewUserController()
 
 	r.POST("/v1/auth/users/create", userController.CreateUserHttp)
+	r.POST("/v1/auth/users/verify-email", userController.VerifyEmailHandler)
+
+	r.POST("/v1/auth/users/send-email", userController.SendEmailHandler)
+
+	r.POST("/v1/auth/users/login", userController.LoginHandler)
 
 	return r
 }
