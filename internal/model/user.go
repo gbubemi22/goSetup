@@ -13,6 +13,7 @@ type User struct {
 	VerifiedEmail bool               `bson:"verifiedEmail" json:"verifiedEmail"`
 	OtpToken      string             `bson:"otpToken,omitempty" json:"otpToken,omitempty"`
 	ExpiredAt     time.Time          `bson:"expiredAt,omitempty" json:"expiredAt,omitempty"`
+	Image         string             `bson:"image" json:"image"`
 	CreatedAt     time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt     time.Time          `bson:"updatedAt" json:"updatedAt"`
 }

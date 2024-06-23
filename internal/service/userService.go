@@ -57,9 +57,8 @@ func (s *UserService) Create(user model.User) (*model.User, error) {
 	var existingUser model.User
 	err := s.collection.FindOne(ctx, filter).Decode(&existingUser)
 	if err == nil {
-		return nil, errors.New("user with given email or username already exists")
+		return nil, utils.NewConflictError("user with given email or username already exists")
 	}
-
 	if err != mongo.ErrNoDocuments {
 		return nil, errors.New("internal server error")
 	}
@@ -231,3 +230,67 @@ func (s *UserService) Login(email, password string) (string, error) {
 
 	return token, nil
 }
+
+
+
+
+
+
+
+func (s *UserService) UploadImage(userId string, imageURL string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var user model.User
+	err := s.collection.FindOne(ctx, bson.M{"_id": userId}).Decode(&user)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return errors.New("user not found")
+		}
+		return fmt.Errorf("error finding user: %w", err)
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"image": imageURL,
+		},
+	}
+	_, err = s.collection.UpdateOne(ctx, bson.M{"_id": userId}, update)
+	if err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	return nil
+}
+
+
+// func (s *UserService) UploadImage(userId string, image string) error {
+// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+// 	defer cancel()
+
+// 	var user model.User
+// 	err := s.collection.FindOne(ctx, bson.M{"_id": userId}).Decode(&user)
+// 	if err != nil {
+// 		if errors.Is(err, mongo.ErrNoDocuments) {
+// 			return errors.New("user not found")
+// 		}
+// 		return fmt.Errorf("error finding user: %w", err)
+// 	}
+
+// 	imageURL, err := utils.UploadImage(image)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to upload image: %w", err)
+// 	}
+
+// 	update := bson.M{
+// 		"$set": bson.M{
+// 			"image": imageURL,
+// 		},
+// 	}
+// 	_, err = s.collection.UpdateOne(ctx, bson.M{"_id": userId}, update)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to update user: %w", err)
+// 	}
+
+// 	return nil
+// }

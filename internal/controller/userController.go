@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go_mongoDb/internal/model"
 	"go_mongoDb/internal/service"
+	"go_mongoDb/internal/utils"
 )
 
 type UserController struct {
@@ -79,24 +80,63 @@ func (controller *UserController) LoginHandler(c *gin.Context) {
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
-	   }
-	 
-	   token, err := controller.userService.Login(req.Email, req.Password)
-	   if err != nil {
+	}
+
+	token, err := controller.userService.Login(req.Email, req.Password)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()}) // Use specific error message
 		return
-	   }
-	 
-	   c.JSON(http.StatusOK, gin.H{"token": token})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": token})
 
 }
-
+func (controller *UserController) UploadImageHandler(c *gin.Context) {
+	// Get the user ID from the context
+	userID, exists := c.Get("userID")
+	if !exists {
+	    c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	    return
+	}
+ 
+	userIDStr, ok := userID.(string)
+	if !ok {
+	    c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+	    return
+	}
+ 
+	// Get the image from form data
+	file, err := c.FormFile("image")
+	if err != nil {
+	    c.JSON(http.StatusBadRequest, gin.H{"error": "Image file is required"})
+	    return
+	}
+ 
+	// Upload the image directly using utils.UploadImage
+	imageURL, err := utils.UploadImage(file)
+	if err != nil {
+	    c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload image"})
+	    return
+	}
+ 
+	// Update the user with the image URL
+	if err := controller.userService.UploadImage(userIDStr, imageURL); err != nil {
+	    if err.Error() == "user not found" {
+		   c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		   return
+	    }
+	    c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	    return
+	}
+ 
+	c.JSON(http.StatusOK, gin.H{"message": "Image uploaded successfully"})
+ }
 
 // if err != nil {
-	// 	if err.Error() == "user not found" || err.Error() == "invalid password" {
-	// 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-	// 	} else {
-	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
-	// 	}
-	// 	return
-	// }
+// 	if err.Error() == "user not found" || err.Error() == "invalid password" {
+// 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+// 	} else {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+// 	}
+// 	return
+// }
