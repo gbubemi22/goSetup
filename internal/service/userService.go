@@ -89,15 +89,18 @@ func (s *UserService) Create(user model.User) (*model.User, error) {
 	user.UpdatedAt = time.Now()
 	fmt.Println(otpToken)
 
-	to := []string{user.Email}
-	subject := "Test Email"
-	body := fmt.Sprintf("<h1>Hello from Mailtrap! Here is your OTP: %s</h1>", otpToken)
+	go func() {
+		to := []string{user.Email}
+		subject := "Test Email"
+		body := fmt.Sprintf("<h1>Hello from Mailtrap! Here is your OTP: %s</h1>", otpToken)
 
-	if err := utils.SendMail(subject, body, to); err != nil {
-		log.Fatalf("Could not send email: %v", err)
-	}
-
-	fmt.Println("Email sent successfully!")
+		if err := utils.SendMail(subject, body, to); err != nil {
+			log.Printf("Could not send email: %v", err)
+			// Handle or log the error as appropriate
+		} else {
+			fmt.Println("Email sent successfully!")
+		}
+	}()
 
 	_, err = s.collection.InsertOne(ctx, user)
 	if err != nil {
@@ -237,12 +240,18 @@ func (s *UserService) Login(email, password string) (string, error) {
 
 
 
-func (s *UserService) UploadImage(userId string, imageURL string) error {
+func (s *UserService) UploadImage(user_id string, imageURL string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// Convert user_id from string to ObjectID
+	userObjectID, err := primitive.ObjectIDFromHex(user_id)
+	if err != nil {
+		return fmt.Errorf("invalid user ID format: %w", err)
+	}
+
 	var user model.User
-	err := s.collection.FindOne(ctx, bson.M{"_id": userId}).Decode(&user)
+	err = s.collection.FindOne(ctx, bson.M{"_id": userObjectID}).Decode(&user)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return errors.New("user not found")
@@ -255,13 +264,14 @@ func (s *UserService) UploadImage(userId string, imageURL string) error {
 			"image": imageURL,
 		},
 	}
-	_, err = s.collection.UpdateOne(ctx, bson.M{"_id": userId}, update)
+	_, err = s.collection.UpdateOne(ctx, bson.M{"_id": userObjectID}, update)
 	if err != nil {
 		return fmt.Errorf("failed to update user: %w", err)
 	}
 
 	return nil
 }
+
 
 
 // func (s *UserService) UploadImage(userId string, image string) error {

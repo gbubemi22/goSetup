@@ -18,8 +18,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	r.GET("/health", s.healthHandler)
 
-	r.NoRoute(middleware.HandleNotFound)
 	r.Use(middleware.ErrorHandlerMiddleware)
+	r.NoRoute(middleware.HandleNotFound)
 
 	userController := controller.NewUserController()
 

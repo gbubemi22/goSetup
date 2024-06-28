@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
-	
+	"os"
+	"mime/multipart"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/joho/godotenv"
-	"mime/multipart"
 )
 
 // UploadImage uploads a file to an AWS S3 bucket.
@@ -22,8 +22,13 @@ func UploadImage(file *multipart.FileHeader) (string, error) {
 		log.Fatalf("Error loading .env file")
 	}
 
-	// Load the default AWS config
-	cfg, err := config.LoadDefaultConfig(context.TODO())
+	awsRegion := os.Getenv("AWS_REGION")
+	if awsRegion == "" {
+		log.Fatalf("AWS_REGION is not set in the environment")
+	}
+
+	// Load the AWS config with the specified region
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if err != nil {
 		log.Printf("error loading AWS config: %v", err)
 		return "", fmt.Errorf("error loading AWS config: %w", err)
@@ -48,7 +53,7 @@ func UploadImage(file *multipart.FileHeader) (string, error) {
 		Bucket: aws.String("gbubemi"),
 		Key:    aws.String(file.Filename),
 		Body:   f,
-		ACL:    "public-read",
+		//ACL:    "public-read",
 	})
 	if err != nil {
 		log.Printf("error uploading file to S3: %v", err)
@@ -56,6 +61,6 @@ func UploadImage(file *multipart.FileHeader) (string, error) {
 	}
 
 	// Return the URL of the uploaded file
-	url := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", "my-bucket", file.Filename)
+	url := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", "gbubemi", awsRegion, file.Filename)
 	return url, nil
 }

@@ -1,3 +1,4 @@
+// middleware/error_handler.go
 package middleware
 
 import (
@@ -6,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go_mongoDb/internal/utils"
 )
 
 func ErrorHandlerMiddleware(c *gin.Context) {
@@ -32,9 +34,12 @@ func ErrorHandlerMiddleware(c *gin.Context) {
 			msg = "Error rendering response"
 			errorCode = "INTERNAL_SERVER_ERROR"
 		default:
-			// Handle other types of errors here
-			// For example, MongoDB errors
-			if mongoErr, ok := err.Err.(*mongo.CommandError); ok {
+			// Handle custom errors
+			if customErr, ok := err.Err.(*utils.CustomError); ok {
+				statusCode = customErr.HTTPStatusCode
+				msg = customErr.Message
+				errorCode = "CUSTOM_ERROR" // You may adjust this logic based on your needs
+			} else if mongoErr, ok := err.Err.(*mongo.CommandError); ok {
 				switch mongoErr.Code {
 				case 11000:
 					statusCode = http.StatusConflict

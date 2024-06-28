@@ -1,71 +1,85 @@
 package utils
 
 import (
-	"fmt"
+	"encoding/json"
+	"net/http"
+	"os"
 )
 
-// HTTPError represents a custom HTTP error.
-type HTTPError struct {
-	Message string
-	Code    int
+type CustomError struct {
+	Message        string `json:"message"`
+	ErrorCode      int    `json:"errorCode,omitempty"`
+	HTTPStatusCode int    `json:"httpStatusCode,omitempty"`
+	Service        string `json:"service,omitempty"`
+	Success        bool   `json:"success,omitempty"`
 }
 
-func (e *HTTPError) Error() string {
-	return fmt.Sprintf("%d: %s", e.Code, e.Message)
+func (e *CustomError) Error() string {
+	return e.Message
 }
 
-// NewUnauthorizedError creates a new UnauthorizedError (401).
-func NewUnauthorizedError(message string) *HTTPError {
-	return &HTTPError{
-		Message: message,
-		Code:    401,
+var serviceName = os.Getenv("SERVICE_NAME")
+
+func NewUnauthorizedError(message string) *CustomError {
+	return &CustomError{
+		Message:        message,
+		ErrorCode:      401,
+		HTTPStatusCode: http.StatusUnauthorized,
+		Service:        serviceName,
+		Success:        false,
 	}
 }
 
-// NewBadRequestError creates a new BadRequestError (400).
-func NewBadRequestError(message string) *HTTPError {
-	return &HTTPError{
-		Message: message,
-		Code:    400,
+func NewBadRequestError(message string) *CustomError {
+	return &CustomError{
+		Message:        message,
+		ErrorCode:      400,
+		HTTPStatusCode: http.StatusBadRequest,
+		Service:        serviceName,
+		Success:        false,
 	}
 }
 
-// NewConflictError creates a new ConflictError (409).
-func NewConflictError(message string) *HTTPError {
-	return &HTTPError{
-		Message: message,
-		Code:    409,
+func NewConflictError(message string) *CustomError {
+	return &CustomError{
+		Message:        message,
+		ErrorCode:      409,
+		HTTPStatusCode: http.StatusConflict,
+		Service:        serviceName,
+		Success:        false,
 	}
 }
 
-// NewInternalServerError creates a new InternalServerError (500).
-func NewInternalServerError(message string) *HTTPError {
-	return &HTTPError{
-		Message: message,
-		Code:    500,
+func NewInternalServerError(message string) *CustomError {
+	return &CustomError{
+		Message:        message,
+		ErrorCode:      500,
+		HTTPStatusCode: http.StatusInternalServerError,
+		Service:        serviceName,
+		Success:        false,
 	}
 }
 
-// NewUnauthenticatedError creates a new UnauthenticatedError (401).
-func NewUnauthenticatedError(message string) *HTTPError {
-	return &HTTPError{
-		Message: message,
-		Code:    401,
+func NewUnauthenticatedError(message string) *CustomError {
+	return &CustomError{
+		Message:        message,
+		ErrorCode:      401,
+		HTTPStatusCode: http.StatusUnauthorized,
+		Service:        serviceName,
+		Success:        false,
 	}
 }
 
-// NewNotFoundError creates a new NotFoundError (404).
-func NewNotFoundError(message string) *HTTPError {
-	return &HTTPError{
-		Message: message,
-		Code:    404,
+func NewNotFoundError(message string) *CustomError {
+	return &CustomError{
+		Message:        message,
+		ErrorCode:      404,
+		HTTPStatusCode: http.StatusNotFound,
+		Service:        serviceName,
+		Success:        false,
 	}
 }
 
-// NewValidationError creates a new ValidationError (400).
-func NewValidationError(message string) *HTTPError {
-	return &HTTPError{
-		Message: message,
-		Code:    400,
-	}
+func (e *CustomError) ToJSON() ([]byte, error) {
+	return json.Marshal(e)
 }
