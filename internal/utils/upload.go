@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"mime/multipart"
+	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -48,12 +48,13 @@ func UploadImage(file *multipart.FileHeader) (string, error) {
 	// Create an uploader with the S3 client
 	uploader := manager.NewUploader(client)
 
-	// Upload the file to S3
+	bucketName := "gbubemi"
+	key := file.Filename
 	_, err = uploader.Upload(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String("gbubemi"),
-		Key:    aws.String(file.Filename),
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(key),
 		Body:   f,
-		//ACL:    "public-read",
+		ACL:    "public-read",
 	})
 	if err != nil {
 		log.Printf("error uploading file to S3: %v", err)
@@ -61,6 +62,11 @@ func UploadImage(file *multipart.FileHeader) (string, error) {
 	}
 
 	// Return the URL of the uploaded file
-	url := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", "gbubemi", awsRegion, file.Filename)
+	region := cfg.Region // Get the region from the config
+	url := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key)
 	return url, nil
+
+	// // Return the URL of the uploaded file
+	// url := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", "gbubemi", awsRegion, file.Filename)
+	// return url, nil
 }

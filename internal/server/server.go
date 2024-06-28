@@ -10,11 +10,13 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 
 	"go_mongoDb/internal/database"
+	"go_mongoDb/internal/websocket"
 )
 
 type Server struct {
 	port int
 	db   *database.Service
+	ws   *websocket.WebSocketServer
 	
  }
  
@@ -31,10 +33,14 @@ type Server struct {
 	    fmt.Printf("Error initializing database: %v\n", err)
 	  
 	}
+
+	ws := websocket.NewWebSocketServer() 
+	go ws.Run()
  
 	NewServer := &Server{
 	    port: port,
 	    db:   db,
+	    ws:   ws,
 	}
 
 

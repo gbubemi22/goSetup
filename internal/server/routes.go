@@ -36,8 +36,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 		authorized.POST("/users/upload-image", userController.UploadImageHandler)
 	}
 
-	//r.POST("/v1/auth/users/upload-image", userController.UploadImageHandler)
-
+	r.GET("/ws", func(c *gin.Context) {
+		s.ws.HandleConnections(c.Writer, c.Request)
+	 })
+  
+	
 	return r
 }
 
