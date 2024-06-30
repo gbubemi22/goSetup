@@ -4,19 +4,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"go_mongoDb/internal/controller"
 	"go_mongoDb/internal/middleware"
+
 	"net/http"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
-	//r := gin.Default()
-	gin.ForceConsoleColor()
+	r := gin.Default()
 
-	r := gin.New()
 	r.Use(gin.Logger())
 
 	r.GET("/", s.HelloWorldHandler)
-
-	r.GET("/health", s.healthHandler)
 
 	r.Use(middleware.ErrorHandlerMiddleware)
 	r.NoRoute(middleware.HandleNotFound)
@@ -38,9 +35,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	r.GET("/ws", func(c *gin.Context) {
 		s.ws.HandleConnections(c.Writer, c.Request)
-	 })
-  
-	
+	})
+
 	return r
 }
 
@@ -49,8 +45,4 @@ func (s *Server) HelloWorldHandler(c *gin.Context) {
 	resp["message"] = "Hello World"
 
 	c.JSON(http.StatusOK, resp)
-}
-
-func (s *Server) healthHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, s.db.Health())
 }
