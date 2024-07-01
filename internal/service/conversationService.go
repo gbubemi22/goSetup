@@ -3,13 +3,14 @@ package service
 import (
 	"context"
 	"errors"
-	"go_mongoDb/internal/model"
-	"go_mongoDb/internal/utils"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"go_mongoDb/internal/model"
+	"go_mongoDb/internal/utils"
 )
 
 type ConversationService struct {

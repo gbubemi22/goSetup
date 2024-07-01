@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"go_mongoDb/internal/model"
 	"go_mongoDb/internal/service"
 )
@@ -17,9 +18,8 @@ type WebSocketServer struct {
 	register            chan *websocket.Conn
 	unregister          chan *websocket.Conn
 	conversationService *service.ConversationService
+	messageService      *service.MessageService
 }
-
-
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -27,13 +27,14 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func NewWebSocketServer(conversationService *service.ConversationService) *WebSocketServer {
+func NewWebSocketServer(conversationService *service.ConversationService, messageService *service.MessageService) *WebSocketServer {
 	return &WebSocketServer{
 		clients:             make(map[*websocket.Conn]bool),
 		broadcast:           make(chan []byte),
 		register:            make(chan *websocket.Conn),
 		unregister:          make(chan *websocket.Conn),
 		conversationService: conversationService,
+		messageService:      messageService,
 	}
 }
 
@@ -121,6 +122,77 @@ func (ws *WebSocketServer) HandleConnections(w http.ResponseWriter, r *http.Requ
 			}
 
 			log.Println("Conversation created successfully")
+
+		case "get_conversationById":
+			conversationId, err := primitive.ObjectIDFromHex(request["_id"].(string))
+			if err != nil {
+				log.Println("Invalid conversationID")
+				continue
+			}
+
+			conversation, sender, receiver, err := ws.conversationService.GetConversationWithUsers(r.Context(), conversationId)
+			if err != nil {
+				log.Printf("Error getting conversation: %v", err)
+				continue
+			}
+
+			response := map[string]interface{}{
+				"conversation": conversation,
+				"sender":       sender,
+				"receiver":     receiver,
+			}
+			responseMessage, err := json.Marshal(response)
+			if err != nil {
+				log.Printf("Error marshalling response: %v", err)
+				continue
+			}
+
+			err = conn.WriteMessage(websocket.TextMessage, responseMessage)
+			if err != nil {
+				log.Printf("Error sending message: %v", err)
+			}
+
+			log.Println("Conversation fetched successfully")
+
+		case "send_message":
+			conversationID, err1 := primitive.ObjectIDFromHex(request["conversationId"].(string))
+			senderID, err2 := primitive.ObjectIDFromHex(request["senderId"].(string))
+
+			if err1 != nil || err2 != nil {
+				log.Println("Invalid conversation or sender ID")
+				continue
+			}
+
+			message := model.Message{
+				ConversationId: conversationID,
+				SenderId:       senderID,
+				Message:        request["message"].(string),
+			}
+
+			createdMessage, err := ws.messageService.Create(message)
+			if err != nil {
+				log.Printf("Error creating message: %v", err)
+				continue
+			}
+
+			// Create the response
+			response := map[string]interface{}{
+				"status":  "success",
+				"message": createdMessage,
+			}
+			responseMessage, err := json.Marshal(response)
+			if err != nil {
+				log.Printf("Error marshalling response: %v", err)
+				continue
+			}
+		
+			err = conn.WriteMessage(websocket.TextMessage, responseMessage)
+			if err != nil {
+				log.Printf("Error sending message: %v", err)
+			}
+		
+			log.Println("Message sent successfully")
+
 		default:
 			log.Println("Unknown action")
 		}
